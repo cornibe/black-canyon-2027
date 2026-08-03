@@ -1,0 +1,59 @@
+name: Add booking checklist and mobile improvements
+
+on:
+  push:
+    paths:
+      - '.github/workflows/add-booking-mobile.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch site
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          if 'data-enhancement="booking-mobile-v1"' in s:
+              raise SystemExit(0)
+
+          css='''.quickbar{position:sticky;top:64px;z-index:15;background:#fffdf8e8;backdrop-filter:blur(12px);border-bottom:1px solid var(--line);display:none}.quickbarin{display:flex;gap:8px;overflow-x:auto;padding:10px 16px;scrollbar-width:none}.quickbarin::-webkit-scrollbar{display:none}.quickbar a{flex:0 0 auto;text-decoration:none;padding:8px 11px;border-radius:999px;background:#efe6d6;font-size:12px;font-weight:800}.quickpanel{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.quickitem{padding:16px;border:1px solid var(--line);border-radius:15px;background:var(--card)}.quickitem b{display:block;margin-bottom:3px}.bookinggrid{display:grid;gap:10px}.bookrow{display:grid;grid-template-columns:28px 1.2fr 1fr 1fr .7fr;gap:12px;align-items:center;padding:14px;background:var(--card);border:1px solid var(--line);border-radius:14px}.bookrow input{width:18px;height:18px}.status{font-size:12px;font-weight:800;padding:5px 8px;border-radius:999px;background:#efe6d6;text-align:center}.mobiletools{position:fixed;right:16px;bottom:18px;z-index:40;display:flex;flex-direction:column;gap:9px}.floatbtn{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:var(--dark);color:#fff;text-decoration:none;border:0;box-shadow:0 8px 24px #0003;font-size:20px}.printbtn{width:auto;padding:0 14px;border-radius:23px;font-size:13px;font-weight:800}.verified{font-size:12px;color:var(--muted);margin-top:10px}.mobile-details summary{cursor:pointer;font-weight:850;list-style:none}.mobile-details summary::-webkit-details-marker{display:none}.mobile-details summary:after{content:'+';float:right}.mobile-details[open] summary:after{content:'−'}@media(max-width:850px){.quickbar{display:block}.quickpanel{grid-template-columns:1fr 1fr}.bookrow{grid-template-columns:28px 1fr}.bookrow>*:nth-child(n+3){grid-column:2}.section{scroll-margin-top:120px}.mobile-details{display:block}.mobile-details>summary{padding:16px 0}.mobile-details>.collapsible-content{padding-top:4px}}@media(min-width:851px){.mobile-details>summary{display:none}.mobile-details>.collapsible-content{display:block!important}}@media print{.nav,.quickbar,.mobiletools,.buttons,#map{display:none!important}.hero{min-height:auto;padding:20px;background:none!important;color:#000}.hero p{color:#333}.section{padding:24px 0}.card{box-shadow:none;break-inside:avoid}.shell{width:100%}body{background:#fff}.mobile-details>.collapsible-content{display:block!important}}'''
+          s=s.replace('</style>',css+'</style>',1)
+
+          quickbar='''<div class="quickbar"><div class="quickbarin"><a href="#trip-overview">Overview</a><a href="#booking">Booking</a><a href="#schedule">Schedule</a><a href="#race">Race</a><a href="#family">Family</a><a href="#dining">Dining</a><a href="#hotels">Hotels</a><a href="#mapsection">Map</a></div></div>'''
+          s=s.replace('</nav>', '</nav>'+quickbar,1)
+
+          insertion='''<section class="section" id="booking" data-enhancement="booking-mobile-v1"><div class="shell"><div class="head"><h2>Booking checklist</h2><p>A single action list for turning the proposal into a confirmed trip. Check items off as they are completed; browser checkboxes are for convenience and are not permanently stored.</p></div><div class="quickpanel" style="margin-bottom:20px"><div class="quickitem"><b>Preferred hotel</b>Hampton Inn Anthem</div><div class="quickitem"><b>Return choice</b>Sunday red-eye or Monday daytime</div><div class="quickitem"><b>Ground plan</b>One rental car</div><div class="quickitem"><b>School window</b>Friday–Tuesday available</div></div><div class="bookinggrid"><div class="bookrow"><input type="checkbox" aria-label="Race registration"><div><b>Race registration</b><br><span class="fine">Confirm entry and save registration details.</span></div><div>Black Canyon 100K</div><div>As soon as registration opens</div><div class="status">Priority</div></div><div class="bookrow"><input type="checkbox" aria-label="Flights"><div><b>Flights</b><br><span class="fine">Book Friday outbound and choose Sunday-night or Monday return.</span></div><div>American nonstop PHL–PHX</div><div>When schedule and fare are acceptable</div><div class="status">Priority</div></div><div class="bookrow"><input type="checkbox" aria-label="Hotel"><div><b>Refundable hotel</b><br><span class="fine">Hold Anthem first; compare Happy Valley suites.</span></div><div>2 or 3 nights</div><div>Early, with free cancellation</div><div class="status">Priority</div></div><div class="bookrow"><input type="checkbox" aria-label="Rental car"><div><b>Rental car</b><br><span class="fine">Compact car with child seat plan and flexible pickup.</span></div><div>PHX airport rental center</div><div>After flights</div><div class="status">Next</div></div><div class="bookrow"><input type="checkbox" aria-label="Race shuttle"><div><b>Race shuttle and wave</b><br><span class="fine">Select or confirm assigned transportation once released.</span></div><div>Anthem to Mayer</div><div>When athlete guide opens</div><div class="status">Later</div></div><div class="bookrow"><input type="checkbox" aria-label="Bib pickup"><div><b>Bib-pickup plan</b><br><span class="fine">Verify location, hours and required identification.</span></div><div>Friday afternoon</div><div>Final athlete guide</div><div class="status">Later</div></div><div class="bookrow"><input type="checkbox" aria-label="Activities"><div><b>Family Plan A and indoor backup</b><br><span class="fine">Choose one outdoor outing and one weather-proof alternative.</span></div><div>Lake Pleasant / Cave Creek / MIM</div><div>One month before</div><div class="status">Flexible</div></div><div class="bookrow"><input type="checkbox" aria-label="Dining"><div><b>Dining shortlist</b><br><span class="fine">Save Friday dinner, Cave Creek lunch and post-race fallback.</span></div><div>Nara Thai / Local Jonny’s / Gio’s</div><div>One week before</div><div class="status">Flexible</div></div><div class="bookrow"><input type="checkbox" aria-label="Final check"><div><b>Final trip check</b><br><span class="fine">Weather, park hours, pool status, restaurant hours and race updates.</span></div><div>All providers</div><div>48–72 hours before</div><div class="status">Final</div></div></div><div class="buttons" style="margin-top:18px"><button class="btn primary" onclick="window.print()">Print itinerary</button></div><div class="verified">Last planning review: August 2026. Reconfirm all 2027 schedules and operating details before booking.</div></div></section>'''
+          anchor='<section class="section"><div class="shell"><div class="card dark decision">'
+          if anchor not in s: raise RuntimeError('booking insertion anchor missing')
+          s=s.replace(anchor,insertion+anchor,1)
+
+          s=s.replace('<a href="#overview">Region</a>','<a href="#booking">Booking</a><a href="#overview">Region</a>',1)
+
+          # Wrap long optional sections in mobile-only collapsible details while preserving content.
+          for sec_id,label in [('indoor','Indoor attractions'),('dining','Dining options'),('mapsection','Map and locations')]:
+              start=s.find(f'<section class="section', s.find(f'id="{sec_id}"')-80)
+              if start==-1: continue
+              end=s.find('</section>',s.find(f'id="{sec_id}"'))+10
+              block=s[start:end]
+              wrapped=f'<details class="mobile-details" open><summary>{label}</summary><div class="collapsible-content">{block}</div></details>'
+              s=s[:start]+wrapped+s[end:]
+
+          tools='''<div class="mobiletools"><button class="floatbtn printbtn" onclick="window.print()" aria-label="Print itinerary">Print</button><a class="floatbtn" href="#" aria-label="Back to top">↑</a></div>'''
+          s=s.replace('</body>',tools+'</body>',1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit changes
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Add booking checklist and mobile navigation improvements"
+          git push
