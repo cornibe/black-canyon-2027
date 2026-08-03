@@ -20,7 +20,7 @@ jobs:
           from pathlib import Path
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
-          rule = '.dark .btn{color:var(--ink)!important;background:#fff}.dark .btn.primary{color:#fff!important;background:var(--rust)}'
+          rule = '.dark .btn{color:var(--ink)!important;background:#fff!important}.dark .btn.primary{color:#fff!important;background:var(--rust)!important}'
           if rule not in s:
               s = s.replace('</style>', rule + '</style>', 1)
               p.write_text(s, encoding='utf-8')
