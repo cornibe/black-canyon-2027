@@ -1,0 +1,73 @@
+name: Add race overview and Miquon calendar
+
+on:
+  push:
+    paths:
+      - '.github/workflows/add-overview-miquon.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch index
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('index.html')
+          html = path.read_text(encoding='utf-8')
+
+          if 'data-enhancement="overview-miquon-v1"' in html:
+              print('Already applied')
+              raise SystemExit(0)
+
+          html = html.replace(
+              '.race td,.race th{border-color:#ffffff1e}',
+              '.race td,.race th{border-color:#ffffff1e}.race .btn{color:var(--ink)}.race .btn.primary{color:#fff}',
+          )
+
+          hero_end = '</header>\n<main>'
+          top_overview = '''</header>
+<main>
+<section class="section" id="trip-overview" data-enhancement="overview-miquon-v1"><div class="shell"><div class="head"><h2>Race and trip overview</h2><p>A four-day family trip centered on a point-to-point 100K through Arizona’s high desert, designed to keep race logistics simple while giving the family independent nature, museum and dining options.</p></div><div class="grid g3"><div class="card pad"><div class="kicker" style="color:var(--rust)">The race</div><h3>Black Canyon 100K</h3><p>A point-to-point ultramarathon from the Mayer area south toward Anthem. The course crosses rugged desert terrain, remote trail and long exposed sections before finishing near the family’s hotel base.</p><div class="meta"><span>100 kilometers</span><span>Saturday, Feb. 13</span><span>Point-to-point</span></div></div><div class="card pad"><div class="kicker" style="color:var(--blue)">The trip</div><h3>Compact family itinerary</h3><p>Fly nonstop from Philadelphia on Friday morning, complete bib pickup, race Saturday, recover and explore Sunday, then return either Sunday night or Monday.</p><div class="meta"><span>PHL–PHX nonstop</span><span>2 or 3 hotel nights</span><span>One rental car</span></div></div><div class="card pad"><div class="kicker" style="color:var(--sage)">The family plan</div><h3>Independent but close</h3><p>The runner uses official transportation while the family keeps the rental car. Nature parks, indoor museums, independent restaurants and the hotel all remain within a manageable radius of Anthem.</p><div class="meta"><span>Six-year-old friendly</span><span>Flexible outings</span><span>No race chasing required</span></div></div></div></div></section>'''
+          if hero_end not in html:
+              raise RuntimeError('Hero insertion point not found')
+          html = html.replace(hero_end, top_overview, 1)
+
+          schedule_end = '</section>\n<section class="section" id="flights">'
+          miquon = '''</section>
+<section class="section overview" id="miquon"><div class="shell"><div class="head"><h2>Miquon February holidays</h2><p>The school’s published 2026–27 calendar aligns unusually well with this trip: Miquon is closed for the entire Friday-through-Tuesday travel window.</p></div><div class="grid g3"><div class="card pad"><div class="kicker" style="color:var(--rust)">Friday, Feb. 12</div><h3>Staff In-Service Day</h3><p>School is closed, allowing the family to take the Friday morning nonstop without missing a regular school day.</p></div><div class="card pad"><div class="kicker" style="color:var(--rust)">Monday, Feb. 15</div><h3>Presidents’ Day</h3><p>School is closed, supporting either an early-Monday return after the Sunday red-eye or a Monday daytime flight.</p></div><div class="card pad"><div class="kicker" style="color:var(--rust)">Tuesday, Feb. 16</div><h3>Doldrum’s Day</h3><p>School remains closed Tuesday, creating a recovery buffer after a Monday return and reducing pressure on the travel schedule.</p></div></div><div class="card pad dark" style="margin-top:20px"><div class="kicker">Practical result</div><h3>Friday through Tuesday are all available</h3><p>The race trip can run from Friday, February 12 through Monday, February 15 without overlapping a Miquon school day. Tuesday, February 16 remains available as an additional home recovery day.</p><div class="buttons" style="margin-top:15px"><a class="btn" href="https://miquon.org/calendar/" target="_blank">Miquon calendar</a><a class="btn" href="https://miquon.org/wp-content/uploads/26-27-Open_Closed-Dates_FINAL.pdf" target="_blank">2026–27 open/closed dates</a></div></div></div></section>
+<section class="section" id="flights">'''
+          if schedule_end not in html:
+              raise RuntimeError('Schedule insertion point not found')
+          html = html.replace(schedule_end, miquon, 1)
+
+          html = html.replace(
+              '<a href="#overview">Region</a>',
+              '<a href="#trip-overview">Overview</a><a href="#overview">Region</a>',
+              1,
+          )
+          html = html.replace(
+              '<a href="#schedule">Schedule</a>',
+              '<a href="#schedule">Schedule</a><a href="#miquon">Miquon</a>',
+              1,
+          )
+
+          path.write_text(html, encoding='utf-8')
+          PY
+      - name: Commit changes
+        run: |
+          if git diff --quiet; then
+            echo "No changes needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Add race overview, Miquon calendar and registration button fix"
+          git push
