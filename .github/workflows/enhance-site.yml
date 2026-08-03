@@ -1,0 +1,100 @@
+name: Enhance hotel and map sections
+
+on:
+  push:
+    paths:
+      - '.github/workflows/enhance-site.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  enhance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch site
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('index.html')
+          html = path.read_text(encoding='utf-8')
+
+          marker = 'data-enhancement="hotel-map-v2"'
+          if marker in html:
+              print('Enhancement already applied.')
+              raise SystemExit(0)
+
+          html = html.replace(
+              '.mapbox{background:#fff;border:1px solid var(--line);border-radius:22px;overflow:hidden;box-shadow:var(--shadow)}.maphead{padding:18px 22px}#map{height:540px}',
+              '.mapbox{background:#fff;border:1px solid var(--line);border-radius:22px;overflow:hidden;box-shadow:var(--shadow)}.maphead{padding:18px 22px;border-bottom:1px solid var(--line)}.maplegend{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}.legenditem{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border-radius:999px;background:#f3efe6;font-size:12px;font-weight:750}.legenddot{width:11px;height:11px;border-radius:50%;display:inline-block}.maplabel{background:#fff;border:1px solid #d9d1c3;border-radius:7px;padding:3px 7px;font-size:11px;font-weight:800;color:#17201c;box-shadow:0 2px 7px #0002;white-space:nowrap}.hotelcompare{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}.hotelbadge{display:inline-flex;padding:6px 9px;border-radius:999px;background:#efe6d6;font-size:12px;font-weight:800;margin-bottom:10px}#map{height:610px}',
+          )
+          html = html.replace(
+              '@media(max-width:850px){.links{display:none}.head,.g2,.g3,.decision,.day{grid-template-columns:1fr}',
+              '@media(max-width:850px){.links{display:none}.head,.g2,.g3,.decision,.day,.hotelcompare{grid-template-columns:1fr}',
+          )
+
+          old_map = '<section class="section" id="mapsection"><div class="shell"><div class="head"><h2>Reference map</h2><p>Approximate locations; use live navigation and the final race guide.</p></div><div class="mapbox"><div class="maphead"><b>Race corridor, hotel, attractions and dining</b></div><div id="map"></div></div></div></section>'
+          new_map = '''<section class="section" id="mapsection" data-enhancement="hotel-map-v2"><div class="shell"><div class="head"><h2>Reference map</h2><p>Approximate planning locations. Numbered labels identify the most important trip anchors; use live navigation and the final race guide for exact entrances.</p></div><div class="mapbox"><div class="maphead"><b>Race corridor, hotels, attractions and dining</b><div class="maplegend"><span class="legenditem"><span class="legenddot" style="background:#a34f31"></span>Race logistics</span><span class="legenditem"><span class="legenddot" style="background:#254e76"></span>Hotels and indoor attractions</span><span class="legenditem"><span class="legenddot" style="background:#627c68"></span>Nature and towns</span><span class="legenditem"><span class="legenddot" style="background:#d28a2f"></span>Dining</span><span class="legenditem"><span class="legenddot" style="background:#7a4b9e"></span>Airport</span></div></div><div id="map"></div></div></div></section>'''
+          if old_map not in html:
+              raise RuntimeError('Could not locate map section')
+          html = html.replace(old_map, new_map)
+
+          old_hotel = '<section class="section budget"><div class="shell"><div class="grid g2"><div class="card pad"><div class="kicker" style="color:var(--rust)">Recommended hotel</div><h3>Hampton Inn Phoenix / Anthem</h3><p>Book Friday and Saturday nights; add Sunday night for the Monday flight option.</p><div class="buttons" style="margin-top:17px"><a class="btn primary" href="https://www.hilton.com/en/hotels/phxamhx-hampton-phoenix-anthem/" target="_blank">Official hotel site</a><a class="btn" href="https://www.google.com/maps/search/?api=1&query=Hampton+Inn+Phoenix+Anthem" target="_blank">Google Maps</a></div></div><div class="card pad dark"><div class="kicker">Decision rule</div><div class="total">2 or 3 nights</div><p>Two nights for minimum time away; three nights for better recovery.</p></div></div></div></section>'
+          new_hotel = '''<section class="section budget" id="hotels"><div class="shell"><div class="head"><h2>Hotel options</h2><p>Anthem is best for race logistics. Happy Valley is the stronger fallback when suite space, a kitchenette and a broader restaurant area matter more than being beside the shuttle.</p></div><div class="hotelcompare"><div class="card pad"><span class="hotelbadge">Best race logistics</span><div class="kicker" style="color:var(--rust)">Recommended</div><h3>Hampton Inn Phoenix / Anthem</h3><p>Across from the Anthem race-transportation area, making this the simplest choice for the runner. It includes breakfast, parking and an outdoor pool. Book Friday and Saturday nights; add Sunday night for the Monday flight option.</p><div class="meta"><span>Beside shuttle hub</span><span>Fastest race morning</span><span>Outdoor pool</span></div><div class="buttons"><a class="btn primary" href="https://www.hilton.com/en/hotels/phxamhx-hampton-phoenix-anthem/" target="_blank">Official hotel site</a><a class="btn" href="https://www.google.com/maps/search/?api=1&query=Hampton+Inn+Phoenix+Anthem" target="_blank">Google Maps</a></div></div><div class="card pad"><span class="hotelbadge">Best family space</span><div class="kicker" style="color:var(--blue)">Alternative</div><h3>Happy Valley suite hotels</h3><p><b>Home2 Suites Phoenix North–Happy Valley</b> and <b>Homewood Suites Phoenix North–Happy Valley</b> offer larger rooms or suites and kitchen facilities. Happy Valley has more nearby dining and shopping, but expect roughly a 15–25 minute drive north to the Anthem shuttle area on race morning.</p><div class="meta"><span>Kitchenette or kitchen</span><span>More family space</span><span>Drive to shuttle</span></div><div class="buttons"><a class="btn primary" href="https://www.hilton.com/en/hotels/phxhvht-home2-suites-phoenix-north-happy-valley/" target="_blank">Home2 Suites</a><a class="btn" href="https://www.hilton.com/en/hotels/phxhwsh-homewood-suites-phoenix-north-happy-valley/" target="_blank">Homewood Suites</a><a class="btn" href="https://www.google.com/maps/search/?api=1&query=Hilton+suite+hotels+Happy+Valley+Phoenix" target="_blank">Google Maps</a></div></div></div><div class="card pad dark" style="margin-top:20px"><div class="kicker">Decision rule</div><div class="total">Location vs. space</div><p>Choose Anthem for minimum race-day friction. Choose Happy Valley for a kitchenette, more room and a stronger suburban dining cluster.</p></div></div></section>'''
+          if old_hotel not in html:
+              raise RuntimeError('Could not locate hotel section')
+          html = html.replace(old_hotel, new_hotel)
+
+          start = html.index('<script>const map=L.map(')
+          end = html.index('</script>', start) + len('</script>')
+          new_script = '''<script>
+          const map=L.map('map',{scrollWheelZoom:false,zoomControl:true}).setView([33.98,-112.2],9);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
+          const colors={race:'#a34f31',hotel:'#254e76',nature:'#627c68',food:'#d28a2f',airport:'#7a4b9e'};
+          function icon(color,label){return L.divIcon({className:'',html:`<div style="min-width:25px;height:25px;padding:0 6px;border-radius:13px;background:${color};border:3px solid white;box-shadow:0 2px 9px #0006;color:white;display:grid;place-items:center;font:800 11px system-ui">${label||''}</div>`,iconSize:[25,25],iconAnchor:[12,12]})}
+          const places=[
+            {n:'PHX Airport',lat:33.4342,lng:-112.0116,c:'airport',label:'A',detail:'Arrival, rental car and return flight.'},
+            {n:'Hampton Inn Anthem',lat:33.8586,lng:-112.1398,c:'hotel',label:'1',detail:'Recommended hotel beside the race shuttle hub.'},
+            {n:'Happy Valley suite hotels',lat:33.7138,lng:-112.1145,c:'hotel',label:'2',detail:'Home2 Suites and Homewood Suites alternative.'},
+            {n:'Bib pickup',lat:34.097,lng:-112.143,c:'race',label:'3',detail:'Friday expo and required pickup area.'},
+            {n:'Race start',lat:34.401,lng:-112.235,c:'race',label:'4',detail:'Approximate Mayer start area.'},
+            {n:'Race finish',lat:33.895,lng:-112.151,c:'race',label:'5',detail:'Approximate finish and return-shuttle area.'},
+            {n:'Spur Cross Ranch',lat:33.8873,lng:-111.9515,c:'nature',label:'6',detail:'Recommended flexible family hike.'},
+            {n:'Cave Creek Regional Park',lat:33.8228,lng:-112.0172,c:'nature',label:'7',detail:'Nature center, playground and short trails.'},
+            {n:'Lake Pleasant',lat:33.9,lng:-112.28,c:'nature',label:'8',detail:'Closest substantial nature destination.'},
+            {n:'Hassayampa Preserve',lat:33.934,lng:-112.693,c:'nature',label:'9',detail:'Riparian preserve near Wickenburg.'},
+            {n:'Wickenburg',lat:33.968,lng:-112.729,c:'nature',label:'10',detail:'Historic ranching and mining town.'},
+            {n:'Black Canyon Heritage Park',lat:34.066,lng:-112.149,c:'nature',label:'11',detail:'Close nature-and-history outing.'},
+            {n:'Musical Instrument Museum',lat:33.6677,lng:-111.9788,c:'hotel',label:'12',detail:'Best indoor family attraction.'},
+            {n:'Martin Auto Museum',lat:33.6104,lng:-112.1526,c:'hotel',label:'13',detail:'Indoor classic-car collection.'},
+            {n:'Deer Valley Petroglyph Preserve',lat:33.6835,lng:-112.1405,c:'hotel',label:'14',detail:'Indoor exhibits plus short outdoor trail.'},
+            {n:'Nara Thai Cafe',lat:33.864,lng:-112.136,c:'food',label:'',detail:'Convenient vegetarian-friendly Thai.'},
+            {n:'Gio’s Pizza',lat:33.858,lng:-112.14,c:'food',label:'',detail:'Closest simple post-race option.'},
+            {n:'Legends Bar & Grill',lat:33.865,lng:-112.137,c:'food',label:'',detail:'Local neighborhood restaurant.'},
+            {n:'El Encanto Dos',lat:33.89,lng:-112.13,c:'food',label:'',detail:'Atmospheric nearby Mexican restaurant.'},
+            {n:'Local Jonny’s',lat:33.833,lng:-111.95,c:'food',label:'',detail:'Cave Creek café with house veggie burger.'},
+            {n:'El Encanto Uno',lat:33.834,lng:-111.95,c:'food',label:'',detail:'Pond-side Cave Creek Mexican restaurant.'}
+          ];
+          const groups={race:L.layerGroup().addTo(map),hotel:L.layerGroup().addTo(map),nature:L.layerGroup().addTo(map),food:L.layerGroup().addTo(map),airport:L.layerGroup().addTo(map)};
+          places.forEach((p,idx)=>{const m=L.marker([p.lat,p.lng],{icon:icon(colors[p.c],p.label)}).addTo(groups[p.c]).bindPopup(`<b>${p.label?p.label+'. ':''}${p.n}</b><br>${p.detail}`);if(p.label&&idx<14){m.bindTooltip(`${p.label}. ${p.n}`,{permanent:true,direction:'right',offset:[12,0],className:'maplabel',opacity:.94});}});
+          const course=L.polyline([[34.401,-112.235],[34.15,-112.18],[33.895,-112.151]],{color:colors.race,weight:4,opacity:.8,dashArray:'8 7'}).addTo(map).bindPopup('Approximate race corridor—not a navigational course map.');
+          L.control.layers(null,{'Race logistics':groups.race,'Hotels & indoor':groups.hotel,'Nature & towns':groups.nature,'Dining':groups.food,'Airport':groups.airport,'Approx. race corridor':course},{collapsed:false,position:'topright'}).addTo(map);
+          L.control.scale({imperial:true,metric:false}).addTo(map);
+          </script>'''
+          html = html[:start] + new_script + html[end:]
+          path.write_text(html, encoding='utf-8')
+          PY
+      - name: Commit enhanced site
+        run: |
+          if git diff --quiet; then
+            echo "No changes needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Add alternate hotel and enhance reference map"
+          git push
