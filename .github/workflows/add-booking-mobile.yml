@@ -36,11 +36,11 @@ jobs:
 
           s=s.replace('<a href="#overview">Region</a>','<a href="#booking">Booking</a><a href="#overview">Region</a>',1)
 
-          # Wrap long optional sections in mobile-only collapsible details while preserving content.
           for sec_id,label in [('indoor','Indoor attractions'),('dining','Dining options'),('mapsection','Map and locations')]:
-              start=s.find(f'<section class="section', s.find(f'id="{sec_id}"')-80)
-              if start==-1: continue
-              end=s.find('</section>',s.find(f'id="{sec_id}"'))+10
+              target=s.find(f'id="{sec_id}"')
+              if target==-1: continue
+              start=s.rfind('<section',0,target)
+              end=s.find('</section>',target)+10
               block=s[start:end]
               wrapped=f'<details class="mobile-details" open><summary>{label}</summary><div class="collapsible-content">{block}</div></details>'
               s=s[:start]+wrapped+s[end:]
