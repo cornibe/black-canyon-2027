@@ -1,0 +1,47 @@
+name: Move booking checklist to page end
+
+on:
+  push:
+    paths:
+      - '.github/workflows/move-booking-end.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Move booking section
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          marker = 'id="booking"'
+          pos = s.find(marker)
+          if pos == -1:
+              raise RuntimeError('Booking section not found')
+          start = s.rfind('<section', 0, pos)
+          end = s.find('</section>', pos)
+          if start == -1 or end == -1:
+              raise RuntimeError('Could not isolate booking section')
+          end += len('</section>')
+          block = s[start:end]
+          s = s[:start] + s[end:]
+          main_end = s.rfind('</main>')
+          if main_end == -1:
+              raise RuntimeError('Closing main tag not found')
+          s = s[:main_end] + '\n' + block + '\n' + s[main_end:]
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit change
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Move booking checklist to end of page"
+          git push
